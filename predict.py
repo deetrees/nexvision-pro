@@ -55,6 +55,7 @@ def gpt_vision_find_points(image_path, target, api_key):
         with open(image_path, "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
         prompt = f"Given this image of a house, provide pixel coordinates (x,y) for the center of each {target} (e.g., 'front door, garage door'). Respond as: x1,y1;x2,y2"
+        # FIX: Do NOT pass proxies or any extra arguments to OpenAI here!
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
             model="gpt-4-vision-preview",
@@ -242,3 +243,4 @@ class Predictor(BasePredictor):
         except Exception as e:
             logger.error(f"Prediction failed: {e}")
             raise
+
