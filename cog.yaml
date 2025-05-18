@@ -1,4 +1,4 @@
-.build:
+build:
   gpu: true
   python_version: "3.11"
   system_packages:
