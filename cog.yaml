@@ -10,9 +10,6 @@ build:
     - "libxext6"
     - "wget"
     - "ca-certificates"
-  run:
-    - "echo 'Downloading pget from replicate/pget...'"
-    - "curl -LfsS https://github.com/replicate/pget/releases/download/v0.0.2/pget_Linux_x86_64 -o /usr/local/bin/pget"
-    - "chmod +x /usr/local/bin/pget"
-    - "echo 'pget installation complete.'"
+
 predict: "predict.py:Predictor"
+
