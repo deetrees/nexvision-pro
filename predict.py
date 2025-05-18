@@ -42,7 +42,7 @@ class Predictor(BasePredictor):
                 self.inpaint_pipe.enable_xformers_memory_efficient_attention()
             except Exception:
                 self.inpaint_pipe.enable_attention_slicing()
-        self.sam2_predictor = Sam2Predictor.from_pretrained("sam2_base_image")
+from segment_anything import SamPredictor, sam_model_registry
 
     def predict(
         self,
