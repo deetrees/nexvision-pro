@@ -54,7 +54,7 @@ def gpt_vision_find_points(image_path, target, api_key):
             {"role": "system", "content": "Respond only with numeric coordinates or 'None'."},
             {"role": "user", "content": [
                 {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": f"data:image/png;base64,{img_b64}"}
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}}
             ]}
         ],
         max_tokens=50
