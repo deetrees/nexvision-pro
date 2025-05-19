@@ -49,7 +49,7 @@ def gpt_vision_find_points(image_path, target, api_key):
 
     client = OpenAI(api_key=api_key)
     response = client.chat.completions.create(
-        model="gpt-4-vision-preview",
+        model="gpt-4-turbo",
         messages=[
             {"role": "system", "content": "Respond only with numeric coordinates or 'None'."},
             {"role": "user", "content": [
