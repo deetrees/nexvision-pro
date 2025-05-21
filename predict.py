@@ -67,14 +67,19 @@ def gpt_vision_find_points(image_path, target, api_key):
     coords = response.choices[0].message.content.strip()
     if coords.lower() == "none":
         raise ValueError("GPT-4 Vision could not identify requested features.")
+    # Validate format
     for pt in coords.split(";"):
-        _ = map(int, pt.strip().split(","))
+        if pt.strip():
+            _ = map(int, pt.strip().split(","))
     return coords
 
 
 def validate_points(points_str):
     try:
         for pt in points_str.split(";"):
+            pt = pt.strip()
+            if not pt:
+                continue
             x, y = map(int, pt.strip().split(","))
             if x < 0 or y < 0:
                 raise ValueError
@@ -161,5 +166,59 @@ class Predictor(BasePredictor):
             if not coords:
                 raise ValueError(f"No mask points for target: {target}")
 
-            points = [list(map(int, pt.strip().split(","))) for pt in coords]()
+            # Robust parsing of points (ignore blanks, skip invalid)
+            points = []
+            for pt in coords.split(";"):
+                pt = pt.strip()
+                if not pt:
+                    continue
+                try:
+                    x, y = map(int, pt.split(","))
+                    points.append([x, y])
+                except Exception as e:
+                    logger.warning(f"Skipping invalid point '{pt}': {e}")
+
+            if not points:
+                raise ValueError(f"No valid points found for target: {target}")
+
+            # Segment mask with SAM
+            self.sam.set_image(np.array(current_image))
+            masks, _, _ = self.sam.predict(
+                point_coords=np.array(points),
+                point_labels=np.ones(len(points)),
+                multimask_output=False
+            )
+            region_mask = masks[0]
+            region_mask_img = Image.fromarray((region_mask * 255).astype("uint8"))
+
+            # Inpaint the region
+            logger.info(f"Inpainting {target} with prompt: {region_prompt}")
+            result = self.inpainter(
+                prompt=region_prompt,
+                image=current_image,
+                mask_image=region_mask_img,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                negative_prompt=negative_prompt,
+                generator=gen,
+            )
+            current_image = result.images[0]
+
+        # ---- Final ControlNet Depth Polish ----
+        logger.info("Running ControlNet polish for structure...")
+        depth_map = _prepare_depth_map(pil, current_image.width, current_image.height)
+        final = self.control_pipe(
+            prompt=prompt,
+            image=current_image,
+            control_image=depth_map,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            controlnet_conditioning_scale=controlnet_conditioning_scale,
+            negative_prompt=negative_prompt,
+            generator=gen,
+        ).images[0]
+
+        out_path = "/tmp/out.png"
+        final.save(out_path)
+        return Path(out_path)
 
